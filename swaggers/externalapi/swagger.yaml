@@ -1,0 +1,754 @@
+openapi: "3.0.0"
+info:
+    title: "access API"
+    version: "0.0.1"
+servers:
+    - {}
+paths:
+    /api/access/v1/externalAPI/getRole:
+        post:
+            tags:
+                - "ExternalAPI"
+            summary: "Получение роли пользователя"
+            description: "Возвращает текущую роль пользователя Ошибки возвращаются в error.code при HTTP 200; HTTP-статусы 400/404/500 не заменяют JSON-RPC-коды."
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: "object"
+                            required:
+                                - "id"
+                                - "jsonrpc"
+                                - "params"
+                            properties:
+                                id:
+                                    description: "ID исходного запроса; может быть строкой, числом или null."
+                                    oneOf:
+                                        - type: "string"
+                                        - type: "number"
+                                        - type: "object"
+                                          nullable: true
+                                          enum:
+                                              - null
+                                    example: 1
+                                jsonrpc:
+                                    type: "string"
+                                    example: "2.0"
+                                params:
+                                    "$ref": "#/components/schemas/requestExternalAPIGetRole"
+                                method:
+                                    type: "string"
+                                    description: "Для отдельного маршрута может быть опущен."
+                                    enum:
+                                        - "GetRole"
+                                    example: "GetRole"
+                        example:
+                            jsonrpc: "2.0"
+                            id: 1
+                            method: "GetRole"
+                            params:
+                                userID: "3c20ad46-90d0-4002-9997-493a900f4ec0"
+                required: true
+            responses:
+                "200":
+                    description: "Результат вызова или JSON-RPC-ошибка. Поля result и error взаимоисключающие."
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                    - type: "object"
+                                      required:
+                                          - "id"
+                                          - "jsonrpc"
+                                          - "result"
+                                      properties:
+                                          id:
+                                              description: "ID исходного запроса; может быть строкой, числом или null."
+                                              oneOf:
+                                                  - type: "string"
+                                                  - type: "number"
+                                                  - type: "object"
+                                                    nullable: true
+                                                    enum:
+                                                        - null
+                                              example: 1
+                                          jsonrpc:
+                                              type: "string"
+                                              example: "2.0"
+                                          result:
+                                              "$ref": "#/components/schemas/responseExternalAPIGetRole"
+                                    - allOf:
+                                          - "$ref": "#/components/schemas/models.RPCErrorResponse"
+                                          - oneOf:
+                                                - "$ref": "#/components/schemas/models.ErrParseError"
+                                                - "$ref": "#/components/schemas/models.ErrInvalidRequest"
+                                                - "$ref": "#/components/schemas/models.ErrMethodNotFound"
+                                                - "$ref": "#/components/schemas/models.ErrInvalidParams"
+                                                - "$ref": "#/components/schemas/models.ErrInternalError"
+                                                - "$ref": "#/components/schemas/models.ErrRoleNotFound"
+                            examples:
+                                success:
+                                    summary: "Успешный вызов"
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        result:
+                                            role: "manager"
+                                ParseError:
+                                    summary: "Некорректный JSON. Генератор также использует этот код при ошибке декодирования параметров или версии протокола."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32700
+                                            message: "parse error"
+                                InvalidRequest:
+                                    summary: "Некорректный JSON-RPC-запрос; зарезервированный код протокола."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32600
+                                            message: "invalid request"
+                                MethodNotFound:
+                                    summary: "Запрошенный JSON-RPC-метод не найден или не соответствует маршруту."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32601
+                                            message: "method not found"
+                                InvalidParams:
+                                    summary: "Некорректные параметры: отсутствующий или нулевой UUID, пустая роль либо роль из пробелов."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32602
+                                            message: "invalid parameters"
+                                            data: {}
+                                InternalError:
+                                    summary: "Внутренняя ошибка: ошибка PostgreSQL, отмена операции или истечение её таймаута. Технические причины остаются в логах."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32603
+                                            message: "internal server error"
+                                            data: {}
+                                RoleNotFound:
+                                    summary: "GetRole: у пользователя отсутствует запись о роли в users_role."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: 1001
+                                            message: "role not assigned"
+                                            data: {}
+    /api/access/v1/externalAPI/setRole:
+        post:
+            tags:
+                - "ExternalAPI"
+            summary: "Назначение роли пользователя"
+            description: "Назначает или обновляет роль пользователя Ошибки возвращаются в error.code при HTTP 200; HTTP-статусы 400/404/500 не заменяют JSON-RPC-коды."
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: "object"
+                            required:
+                                - "id"
+                                - "jsonrpc"
+                                - "params"
+                            properties:
+                                id:
+                                    description: "ID исходного запроса; может быть строкой, числом или null."
+                                    oneOf:
+                                        - type: "string"
+                                        - type: "number"
+                                        - type: "object"
+                                          nullable: true
+                                          enum:
+                                              - null
+                                    example: 1
+                                jsonrpc:
+                                    type: "string"
+                                    example: "2.0"
+                                params:
+                                    "$ref": "#/components/schemas/requestExternalAPISetRole"
+                                method:
+                                    type: "string"
+                                    description: "Для отдельного маршрута может быть опущен."
+                                    enum:
+                                        - "SetRole"
+                                    example: "SetRole"
+                        example:
+                            jsonrpc: "2.0"
+                            id: 1
+                            method: "SetRole"
+                            params:
+                                userID: "3c20ad46-90d0-4002-9997-493a900f4ec0"
+                                role: "manager"
+                required: true
+            responses:
+                "200":
+                    description: "Результат вызова или JSON-RPC-ошибка. Поля result и error взаимоисключающие."
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                    - type: "object"
+                                      required:
+                                          - "id"
+                                          - "jsonrpc"
+                                          - "result"
+                                      properties:
+                                          id:
+                                              description: "ID исходного запроса; может быть строкой, числом или null."
+                                              oneOf:
+                                                  - type: "string"
+                                                  - type: "number"
+                                                  - type: "object"
+                                                    nullable: true
+                                                    enum:
+                                                        - null
+                                              example: 1
+                                          jsonrpc:
+                                              type: "string"
+                                              example: "2.0"
+                                          result:
+                                              "$ref": "#/components/schemas/responseExternalAPISetRole"
+                                    - allOf:
+                                          - "$ref": "#/components/schemas/models.RPCErrorResponse"
+                                          - oneOf:
+                                                - "$ref": "#/components/schemas/models.ErrParseError"
+                                                - "$ref": "#/components/schemas/models.ErrInvalidRequest"
+                                                - "$ref": "#/components/schemas/models.ErrMethodNotFound"
+                                                - "$ref": "#/components/schemas/models.ErrInvalidParams"
+                                                - "$ref": "#/components/schemas/models.ErrInternalError"
+                                                - "$ref": "#/components/schemas/models.ErrUserNotFound"
+                            examples:
+                                success:
+                                    summary: "Успешный вызов"
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        result: {}
+                                ParseError:
+                                    summary: "Некорректный JSON. Генератор также использует этот код при ошибке декодирования параметров или версии протокола."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32700
+                                            message: "parse error"
+                                InvalidRequest:
+                                    summary: "Некорректный JSON-RPC-запрос; зарезервированный код протокола."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32600
+                                            message: "invalid request"
+                                MethodNotFound:
+                                    summary: "Запрошенный JSON-RPC-метод не найден или не соответствует маршруту."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32601
+                                            message: "method not found"
+                                InvalidParams:
+                                    summary: "Некорректные параметры: отсутствующий или нулевой UUID, пустая роль либо роль из пробелов."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32602
+                                            message: "invalid parameters"
+                                            data: {}
+                                InternalError:
+                                    summary: "Внутренняя ошибка: ошибка PostgreSQL, отмена операции или истечение её таймаута. Технические причины остаются в логах."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: -32603
+                                            message: "internal server error"
+                                            data: {}
+                                UserNotFound:
+                                    summary: "SetRole: внешний ключ users_role не позволяет назначить роль несуществующему пользователю."
+                                    value:
+                                        jsonrpc: "2.0"
+                                        id: 1
+                                        error:
+                                            code: 1002
+                                            message: "user not found"
+                                            data: {}
+components:
+    schemas:
+        requestExternalAPIGetRole:
+            type: "object"
+            required:
+                - "userID"
+            properties:
+                userID:
+                    type: "string"
+                    format: "uuid"
+            description: "Возвращает текущую роль пользователя"
+        requestExternalAPISetRole:
+            type: "object"
+            required:
+                - "userID"
+                - "role"
+            properties:
+                role:
+                    type: "string"
+                userID:
+                    type: "string"
+                    format: "uuid"
+            description: "Назначает или обновляет роль пользователя"
+        responseExternalAPIGetRole:
+            type: "object"
+            required:
+                - "role"
+            properties:
+                role:
+                    type: "string"
+            description: "Возвращает текущую роль пользователя"
+        responseExternalAPISetRole:
+            type: "object"
+        models.RPCError:
+            type: "object"
+            required:
+                - "code"
+                - "message"
+            properties:
+                code:
+                    type: "integer"
+                    format: "int32"
+                    enum:
+                        - -32700
+                        - -32600
+                        - -32601
+                        - -32602
+                        - -32603
+                        - 1001
+                        - 1002
+                    description: "Код JSON-RPC. -32700 — Некорректный JSON. Генератор также использует этот код при ошибке декодирования параметров или версии протокола.; -32600 — Некорректный JSON-RPC-запрос; зарезервированный код протокола.; -32601 — Запрошенный JSON-RPC-метод не найден или не соответствует маршруту.; -32602 — Некорректные параметры: отсутствующий или нулевой UUID, пустая роль либо роль из пробелов.; -32603 — Внутренняя ошибка: ошибка PostgreSQL, отмена операции или истечение её таймаута. Технические причины остаются в логах.; 1001 — GetRole: у пользователя отсутствует запись о роли в users_role.; 1002 — SetRole: внешний ключ users_role не позволяет назначить роль несуществующему пользователю."
+                    example: -32603
+                message:
+                    type: "string"
+                    description: "Публичное сообщение без технических причин."
+                    example: "internal server error"
+                data:
+                    type: "object"
+                    nullable: true
+                    description: "Необязательные публичные данные. Исходные ошибки БД и Cause не раскрываются."
+                    example: {}
+        models.RPCErrorResponse:
+            type: "object"
+            required:
+                - "jsonrpc"
+                - "id"
+                - "error"
+            properties:
+                jsonrpc:
+                    type: "string"
+                    enum:
+                        - "2.0"
+                    example: "2.0"
+                id:
+                    description: "ID исходного запроса; может быть строкой, числом или null."
+                    oneOf:
+                        - type: "string"
+                        - type: "number"
+                        - type: "object"
+                          nullable: true
+                          enum:
+                              - null
+                    example: 1
+                error:
+                    "$ref": "#/components/schemas/models.RPCError"
+        models.ParseError:
+            type: "object"
+            required:
+                - "code"
+                - "message"
+            properties:
+                code:
+                    type: "integer"
+                    format: "int32"
+                    enum:
+                        - -32700
+                    description: "Некорректный JSON. Генератор также использует этот код при ошибке декодирования параметров или версии протокола."
+                    example: -32700
+                message:
+                    type: "string"
+                    description: "Публичное сообщение без технических причин."
+                    example: "parse error"
+                data:
+                    type: "object"
+                    nullable: true
+                    description: "Необязательные публичные данные. Исходные ошибки БД и Cause не раскрываются."
+                    example: {}
+            description: "Некорректный JSON. Генератор также использует этот код при ошибке декодирования параметров или версии протокола."
+        models.ErrParseError:
+            type: "object"
+            required:
+                - "jsonrpc"
+                - "id"
+                - "error"
+            properties:
+                jsonrpc:
+                    type: "string"
+                    enum:
+                        - "2.0"
+                    example: "2.0"
+                id:
+                    description: "ID исходного запроса; может быть строкой, числом или null."
+                    oneOf:
+                        - type: "string"
+                        - type: "number"
+                        - type: "object"
+                          nullable: true
+                          enum:
+                              - null
+                    example: 1
+                error:
+                    "$ref": "#/components/schemas/models.ParseError"
+            description: "Некорректный JSON. Генератор также использует этот код при ошибке декодирования параметров или версии протокола."
+            example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                    code: -32700
+                    message: "parse error"
+        models.InvalidRequest:
+            type: "object"
+            required:
+                - "code"
+                - "message"
+            properties:
+                code:
+                    type: "integer"
+                    format: "int32"
+                    enum:
+                        - -32600
+                    description: "Некорректный JSON-RPC-запрос; зарезервированный код протокола."
+                    example: -32600
+                message:
+                    type: "string"
+                    description: "Публичное сообщение без технических причин."
+                    example: "invalid request"
+                data:
+                    type: "object"
+                    nullable: true
+                    description: "Необязательные публичные данные. Исходные ошибки БД и Cause не раскрываются."
+                    example: {}
+            description: "Некорректный JSON-RPC-запрос; зарезервированный код протокола."
+        models.ErrInvalidRequest:
+            type: "object"
+            required:
+                - "jsonrpc"
+                - "id"
+                - "error"
+            properties:
+                jsonrpc:
+                    type: "string"
+                    enum:
+                        - "2.0"
+                    example: "2.0"
+                id:
+                    description: "ID исходного запроса; может быть строкой, числом или null."
+                    oneOf:
+                        - type: "string"
+                        - type: "number"
+                        - type: "object"
+                          nullable: true
+                          enum:
+                              - null
+                    example: 1
+                error:
+                    "$ref": "#/components/schemas/models.InvalidRequest"
+            description: "Некорректный JSON-RPC-запрос; зарезервированный код протокола."
+            example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                    code: -32600
+                    message: "invalid request"
+        models.MethodNotFound:
+            type: "object"
+            required:
+                - "code"
+                - "message"
+            properties:
+                code:
+                    type: "integer"
+                    format: "int32"
+                    enum:
+                        - -32601
+                    description: "Запрошенный JSON-RPC-метод не найден или не соответствует маршруту."
+                    example: -32601
+                message:
+                    type: "string"
+                    description: "Публичное сообщение без технических причин."
+                    example: "method not found"
+                data:
+                    type: "object"
+                    nullable: true
+                    description: "Необязательные публичные данные. Исходные ошибки БД и Cause не раскрываются."
+                    example: {}
+            description: "Запрошенный JSON-RPC-метод не найден или не соответствует маршруту."
+        models.ErrMethodNotFound:
+            type: "object"
+            required:
+                - "jsonrpc"
+                - "id"
+                - "error"
+            properties:
+                jsonrpc:
+                    type: "string"
+                    enum:
+                        - "2.0"
+                    example: "2.0"
+                id:
+                    description: "ID исходного запроса; может быть строкой, числом или null."
+                    oneOf:
+                        - type: "string"
+                        - type: "number"
+                        - type: "object"
+                          nullable: true
+                          enum:
+                              - null
+                    example: 1
+                error:
+                    "$ref": "#/components/schemas/models.MethodNotFound"
+            description: "Запрошенный JSON-RPC-метод не найден или не соответствует маршруту."
+            example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                    code: -32601
+                    message: "method not found"
+        models.InvalidParams:
+            type: "object"
+            required:
+                - "code"
+                - "message"
+            properties:
+                code:
+                    type: "integer"
+                    format: "int32"
+                    enum:
+                        - -32602
+                    description: "Некорректные параметры: отсутствующий или нулевой UUID, пустая роль либо роль из пробелов."
+                    example: -32602
+                message:
+                    type: "string"
+                    description: "Публичное сообщение без технических причин."
+                    example: "invalid parameters"
+                data:
+                    type: "object"
+                    nullable: true
+                    description: "Необязательные публичные данные. Исходные ошибки БД и Cause не раскрываются."
+                    example: {}
+            description: "Некорректные параметры: отсутствующий или нулевой UUID, пустая роль либо роль из пробелов."
+        models.ErrInvalidParams:
+            type: "object"
+            required:
+                - "jsonrpc"
+                - "id"
+                - "error"
+            properties:
+                jsonrpc:
+                    type: "string"
+                    enum:
+                        - "2.0"
+                    example: "2.0"
+                id:
+                    description: "ID исходного запроса; может быть строкой, числом или null."
+                    oneOf:
+                        - type: "string"
+                        - type: "number"
+                        - type: "object"
+                          nullable: true
+                          enum:
+                              - null
+                    example: 1
+                error:
+                    "$ref": "#/components/schemas/models.InvalidParams"
+            description: "Некорректные параметры: отсутствующий или нулевой UUID, пустая роль либо роль из пробелов."
+            example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                    code: -32602
+                    message: "invalid parameters"
+                    data: {}
+        models.InternalError:
+            type: "object"
+            required:
+                - "code"
+                - "message"
+            properties:
+                code:
+                    type: "integer"
+                    format: "int32"
+                    enum:
+                        - -32603
+                    description: "Внутренняя ошибка: ошибка PostgreSQL, отмена операции или истечение её таймаута. Технические причины остаются в логах."
+                    example: -32603
+                message:
+                    type: "string"
+                    description: "Публичное сообщение без технических причин."
+                    example: "internal server error"
+                data:
+                    type: "object"
+                    nullable: true
+                    description: "Необязательные публичные данные. Исходные ошибки БД и Cause не раскрываются."
+                    example: {}
+            description: "Внутренняя ошибка: ошибка PostgreSQL, отмена операции или истечение её таймаута. Технические причины остаются в логах."
+        models.ErrInternalError:
+            type: "object"
+            required:
+                - "jsonrpc"
+                - "id"
+                - "error"
+            properties:
+                jsonrpc:
+                    type: "string"
+                    enum:
+                        - "2.0"
+                    example: "2.0"
+                id:
+                    description: "ID исходного запроса; может быть строкой, числом или null."
+                    oneOf:
+                        - type: "string"
+                        - type: "number"
+                        - type: "object"
+                          nullable: true
+                          enum:
+                              - null
+                    example: 1
+                error:
+                    "$ref": "#/components/schemas/models.InternalError"
+            description: "Внутренняя ошибка: ошибка PostgreSQL, отмена операции или истечение её таймаута. Технические причины остаются в логах."
+            example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                    code: -32603
+                    message: "internal server error"
+                    data: {}
+        models.RoleNotFound:
+            type: "object"
+            required:
+                - "code"
+                - "message"
+            properties:
+                code:
+                    type: "integer"
+                    format: "int32"
+                    enum:
+                        - 1001
+                    description: "GetRole: у пользователя отсутствует запись о роли в users_role."
+                    example: 1001
+                message:
+                    type: "string"
+                    description: "Публичное сообщение без технических причин."
+                    example: "role not assigned"
+                data:
+                    type: "object"
+                    nullable: true
+                    description: "Необязательные публичные данные. Исходные ошибки БД и Cause не раскрываются."
+                    example: {}
+            description: "GetRole: у пользователя отсутствует запись о роли в users_role."
+        models.ErrRoleNotFound:
+            type: "object"
+            required:
+                - "jsonrpc"
+                - "id"
+                - "error"
+            properties:
+                jsonrpc:
+                    type: "string"
+                    enum:
+                        - "2.0"
+                    example: "2.0"
+                id:
+                    description: "ID исходного запроса; может быть строкой, числом или null."
+                    oneOf:
+                        - type: "string"
+                        - type: "number"
+                        - type: "object"
+                          nullable: true
+                          enum:
+                              - null
+                    example: 1
+                error:
+                    "$ref": "#/components/schemas/models.RoleNotFound"
+            description: "GetRole: у пользователя отсутствует запись о роли в users_role."
+            example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                    code: 1001
+                    message: "role not assigned"
+                    data: {}
+        models.UserNotFound:
+            type: "object"
+            required:
+                - "code"
+                - "message"
+            properties:
+                code:
+                    type: "integer"
+                    format: "int32"
+                    enum:
+                        - 1002
+                    description: "SetRole: внешний ключ users_role не позволяет назначить роль несуществующему пользователю."
+                    example: 1002
+                message:
+                    type: "string"
+                    description: "Публичное сообщение без технических причин."
+                    example: "user not found"
+                data:
+                    type: "object"
+                    nullable: true
+                    description: "Необязательные публичные данные. Исходные ошибки БД и Cause не раскрываются."
+                    example: {}
+            description: "SetRole: внешний ключ users_role не позволяет назначить роль несуществующему пользователю."
+        models.ErrUserNotFound:
+            type: "object"
+            required:
+                - "jsonrpc"
+                - "id"
+                - "error"
+            properties:
+                jsonrpc:
+                    type: "string"
+                    enum:
+                        - "2.0"
+                    example: "2.0"
+                id:
+                    description: "ID исходного запроса; может быть строкой, числом или null."
+                    oneOf:
+                        - type: "string"
+                        - type: "number"
+                        - type: "object"
+                          nullable: true
+                          enum:
+                              - null
+                    example: 1
+                error:
+                    "$ref": "#/components/schemas/models.UserNotFound"
+            description: "SetRole: внешний ключ users_role не позволяет назначить роль несуществующему пользователю."
+            example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                    code: 1002
+                    message: "user not found"
+                    data: {}
