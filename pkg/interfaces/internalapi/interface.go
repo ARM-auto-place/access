@@ -12,10 +12,9 @@ import (
 // @tg servers=
 //
 //go:generate tg transport --services . --out ../../../internal/transport/jsonRPC/internalapi --outSwagger ../../../swaggers/internalapi/swagger.yaml
-
+//go:generate tg client --services . --outPath ../../client/transport -go
 // InternalAPI
 // @tg jsonRPC-server metrics log
-// @tg http-prefix=/api/access/v1
 // @tg uuidPackage=github.com/google/uuid
 type InternalAPI interface {
 	// SetRole ...
