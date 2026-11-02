@@ -11,11 +11,12 @@ import (
 // @tg title=`access API`
 // @tg servers=
 //
-//go:generate tg transport --services . --out ../../../internal/transport/jsonRPC/internalapi --outSwagger ../../../swaggers/internalapi/swagger.yaml
-//go:generate tg client --services . --outPath ../../client/transport -go
 // InternalAPI
 // @tg jsonRPC-server metrics log
 // @tg uuidPackage=github.com/google/uuid
+//
+//go:generate tg transport --services . --out ../../../internal/transport/jsonRPC/internalapi --outSwagger ../../../swaggers/internalapi/swagger.yaml
+//go:generate tg client --services . --outPath ../../client/transport -go
 type InternalAPI interface {
 	// SetRole ...
 	// @tg summary=`Назначение роли пользователя`

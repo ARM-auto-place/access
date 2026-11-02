@@ -95,9 +95,10 @@ func (c *RoleCache) SetRole(id uuid.UUID, role string) {
 		c.put(c.building, id, role, c.cfg.TTL)
 	}
 }
+
 // здесь считаем вес записи, пока не особо разобрался как это работает
 func roleCost(role string) int64 {
-	return int64(len(role)) + 36 + 32 
+	return int64(len(role)) + 36 + 32
 }
 
 func (c *RoleCache) DeleteRole(id uuid.UUID) {
@@ -181,8 +182,10 @@ func (c *RoleCache) abort() {
 		c.dirty = nil
 	}
 }
-func (c *RoleCache) AbortRefresh() { 
-	c.mu.Lock(); defer c.mu.Unlock(); c.abort() 
+func (c *RoleCache) AbortRefresh() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.abort()
 }
 
 func (c *RoleCache) Close() {
