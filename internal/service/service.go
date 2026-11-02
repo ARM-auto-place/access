@@ -11,7 +11,7 @@ import (
 	commonErrors "github.com/ARM-auto-place/access/internal/models/errors"
 	"github.com/ARM-auto-place/access/internal/storage/cache"
 	"github.com/ARM-auto-place/access/internal/storage/postgres"
-	interfaces "github.com/ARM-auto-place/access/pkg/interfaces/externalapi"
+	interfaces "github.com/ARM-auto-place/access/pkg/interfaces/internalapi"
 	customErrors "github.com/ARM-auto-place/access/pkg/models/errors"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -27,7 +27,7 @@ type accessService struct {
 	runOnce   sync.Once
 }
 
-var _ interfaces.ExternalAPI = (*accessService)(nil)
+var _ interfaces.InternalAPI = (*accessService)(nil)
 
 func NewAccessService(logger zerolog.Logger, storage postgres.AccessStorage, roleCache *cache.RoleCache, cfg config.CacheConfig) *accessService {
 	s := &accessService{storage: storage, roleCache: roleCache, logger: logger, cfg: cfg}

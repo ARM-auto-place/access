@@ -17,7 +17,7 @@ import (
 	"github.com/ARM-auto-place/access/internal/storage/cache"
 	"github.com/ARM-auto-place/access/internal/storage/postgres"
 	customhandels "github.com/ARM-auto-place/access/internal/transport/custom-handels"
-	"github.com/ARM-auto-place/access/internal/transport/jsonRPC/externalapi"
+	"github.com/ARM-auto-place/access/internal/transport/jsonRPC/internalapi"
 )
 
 func main() {
@@ -53,27 +53,27 @@ func main() {
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	app := externalapi.New(
+	app := internalapi.New(
 		logger,
-		externalapi.SetReadBufferSize(cfg.MaxRequestHeaderSize),
-		externalapi.MaxBodySize(cfg.MaxRequestBodySize),
-		externalapi.ReadTimeout(cfg.ReadTimeout),
-		externalapi.WriteTimeout(cfg.WriteTimeout),
-		externalapi.MaxBatchSize(100),
-		externalapi.MaxBatchWorkers(1),
-		externalapi.WithRequestID("X-Request-Id"),
-		externalapi.Use(func(ctx *fiber.Ctx) error {
+		internalapi.SetReadBufferSize(cfg.MaxRequestHeaderSize),
+		internalapi.MaxBodySize(cfg.MaxRequestBodySize),
+		internalapi.ReadTimeout(cfg.ReadTimeout),
+		internalapi.WriteTimeout(cfg.WriteTimeout),
+		internalapi.MaxBatchSize(100),
+		internalapi.MaxBatchWorkers(1),
+		internalapi.WithRequestID("X-Request-Id"),
+		internalapi.Use(func(ctx *fiber.Ctx) error {
 			requestCtx, cancel := context.WithTimeout(shutdownCtx, cfg.WriteTimeout)
 			defer cancel()
 			ctx.SetUserContext(log.Ctx(ctx.UserContext()).WithContext(requestCtx))
 			return ctx.Next()
 		}),
-		externalapi.Use(cors.New(cors.Config{
+		internalapi.Use(cors.New(cors.Config{
 			AllowOriginsFunc: isAllowedOrigin(cfg.AllowedOrigins),
 			AllowMethods:     "POST,OPTIONS",
 			AllowHeaders:     "Origin,Content-Type,Accept,Authorization,X-Request-Id",
 		})),
-		externalapi.ExternalAPI(externalapi.NewExternalAPI(accessService).WithErrorHandler(customhandels.ErrorHandler)),
+		internalapi.InternalAPI(internalapi.NewInternalAPI(accessService).WithErrorHandler(customhandels.ErrorHandler)),
 	).WithLog().WithMetrics()
 
 	app.ServeHealth(cfg.HealthBind, map[string]string{"status": "ok"})
