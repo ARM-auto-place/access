@@ -1,0 +1,195 @@
+openapi: 3.0.0
+servers:
+    - {}
+paths:
+    /api/access/v1/internalAPI/getRole:
+        post:
+            tags:
+                - InternalAPI
+            summary: Получение роли пользователя
+            description: 'Возвращает текущую роль пользователя. Ошибки JSON-RPC: -32602 — некорректные параметры; 1001 — роль не назначена; -32603 — внутренняя ошибка.'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - id
+                                - jsonrpc
+                                - result
+                            properties:
+                                id:
+                                    example: 1
+                                    oneOf:
+                                        - type: number
+                                        - type: string
+                                          format: uuid
+                                jsonrpc:
+                                    type: string
+                                    example: "2.0"
+                                params:
+                                    $ref: '#/components/schemas/requestInternalAPIGetRole'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                    - type: object
+                                      required:
+                                        - id
+                                        - jsonrpc
+                                        - result
+                                      properties:
+                                        id:
+                                            example: 1
+                                            oneOf:
+                                                - type: number
+                                                - type: string
+                                                  format: uuid
+                                        jsonrpc:
+                                            type: string
+                                            example: "2.0"
+                                        result:
+                                            $ref: '#/components/schemas/responseInternalAPIGetRole'
+                                    - type: object
+                                      required:
+                                        - id
+                                        - jsonrpc
+                                        - error
+                                      properties:
+                                        error:
+                                            type: object
+                                            properties:
+                                                code:
+                                                    type: number
+                                                    format: int32
+                                                    example: -32603
+                                                data:
+                                                    type: object
+                                                    nullable: true
+                                                message:
+                                                    type: string
+                                                    example: not found
+                                        id:
+                                            example: 1
+                                            oneOf:
+                                                - type: number
+                                                - type: string
+                                                  format: uuid
+                                        jsonrpc:
+                                            type: string
+                                            example: "2.0"
+    /api/access/v1/internalAPI/setRole:
+        post:
+            tags:
+                - InternalAPI
+            summary: Назначение роли пользователя
+            description: 'Назначает или обновляет роль пользователя. Ошибки JSON-RPC: -32602 — некорректные параметры; 1002 — пользователь не найден; -32603 — внутренняя ошибка.'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - id
+                                - jsonrpc
+                                - result
+                            properties:
+                                id:
+                                    example: 1
+                                    oneOf:
+                                        - type: number
+                                        - type: string
+                                          format: uuid
+                                jsonrpc:
+                                    type: string
+                                    example: "2.0"
+                                params:
+                                    $ref: '#/components/schemas/requestInternalAPISetRole'
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                    - type: object
+                                      required:
+                                        - id
+                                        - jsonrpc
+                                        - result
+                                      properties:
+                                        id:
+                                            example: 1
+                                            oneOf:
+                                                - type: number
+                                                - type: string
+                                                  format: uuid
+                                        jsonrpc:
+                                            type: string
+                                            example: "2.0"
+                                        result:
+                                            $ref: '#/components/schemas/responseInternalAPISetRole'
+                                    - type: object
+                                      required:
+                                        - id
+                                        - jsonrpc
+                                        - error
+                                      properties:
+                                        error:
+                                            type: object
+                                            properties:
+                                                code:
+                                                    type: number
+                                                    format: int32
+                                                    example: -32603
+                                                data:
+                                                    type: object
+                                                    nullable: true
+                                                message:
+                                                    type: string
+                                                    example: not found
+                                        id:
+                                            example: 1
+                                            oneOf:
+                                                - type: number
+                                                - type: string
+                                                  format: uuid
+                                        jsonrpc:
+                                            type: string
+                                            example: "2.0"
+components:
+    schemas:
+        requestInternalAPIGetRole:
+            type: object
+            required:
+                - userID
+            properties:
+                userID:
+                    type: string
+                    format: uuid
+            description: 'Возвращает текущую роль пользователя. Ошибки JSON-RPC: -32602 — некорректные параметры; 1001 — роль не назначена; -32603 — внутренняя ошибка.'
+        requestInternalAPISetRole:
+            type: object
+            required:
+                - userID
+                - role
+            properties:
+                role:
+                    type: string
+                userID:
+                    type: string
+                    format: uuid
+            description: 'Назначает или обновляет роль пользователя. Ошибки JSON-RPC: -32602 — некорректные параметры; 1002 — пользователь не найден; -32603 — внутренняя ошибка.'
+        responseInternalAPIGetRole:
+            type: object
+            required:
+                - role
+            properties:
+                role:
+                    type: string
+            description: 'Возвращает текущую роль пользователя. Ошибки JSON-RPC: -32602 — некорректные параметры; 1001 — роль не назначена; -32603 — внутренняя ошибка.'
+        responseInternalAPISetRole:
+            type: object
